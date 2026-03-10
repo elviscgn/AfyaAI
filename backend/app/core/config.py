@@ -23,4 +23,9 @@ class Settings:
 
     AUDIO_LANGUAGE: str = os.getenv("AUDIO_LANGUAGE", "en-US")
 
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-secret")
+    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+    JWT_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
+
 settings = Settings()
