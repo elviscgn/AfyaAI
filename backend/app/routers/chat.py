@@ -4,6 +4,8 @@ from app.schemas.request_models import ChatRequest, ChatResponse
 from app.services.llama_service import LlamaClient
 from app.services.memory_service import MemoryService
 from app.services.ai_context import build_system_prompt
+from app.services.maps_service import CRITICAL_SA_HOTLINES, get_nearest_clinics
+
 
 
 router = APIRouter()
@@ -49,14 +51,38 @@ async def chat_with_afya(request: ChatRequest):
             else:
                 history_context+=f"ASSISSTANT: {message['content']}\n"
 
-        full_user_input = f"PREVIOUS CONVERSATION:\n{history_context}\n\nUSER'S NEW MESSAGE:\n{user_text}"
-
+        full_user_input = f"PREVIOUS CONVERSATION:\n{history_context}\n\nUSER'S NEW MESSAGE:\n{user_text}\n\n[CRITICAL SYSTEM DIRECTIVE: You MUST append the severity tag (e.g., [SEVERITY: HIGH]) to the very end of THIS specific response. Do NOT wait for more context to assign a severity level. Assess the immediate risk based strictly on the current message.]"
         ai_response_text = ai_client.generate_content(
             system_prompt=build_system_prompt(user_id=session_id, db=memory_service),
             user_input=full_user_input,
             source_lang=selected_language,
             target_lang=selected_language
         )
+
+        severity = "LOW"
+        found_clinics = None
+        ai_severity_response = "LOW"
+        if "[SEVERITY:" in ai_response_text:
+            response_split = ai_response_text.split("[SEVERITY:")
+
+            ai_response_text = response_split[0]
+            ai_severity_response= response_split[1].strip().replace("]","")
+
+            if ai_severity_response=="MEDIUM":
+                if request.latitude and request.longitude:
+                    found_clinics = get_nearest_clinics(request.latitude,request.longitude)
+
+            elif ai_severity_response=="HIGH":
+                if request.latitude and request.longitude:
+                    found_clinics = get_nearest_clinics(request.latitude,request.longitude)
+                    ai_response_text+="\n\n Please visit a hospital or contact emergency services IMMEDIATELY. Here are the closest facilities and national hotlines."
+                    for helpline, helpline_number in CRITICAL_SA_HOTLINES.items():
+                        ai_response_text+=f"\n\n {helpline}: {helpline_number}"
+                else:
+                    ai_response_text+="\n\n Please call 112 or 10177 immediately. If you need me to find the nearest hospital, please share your current suburb."
+            
+
+            
 
         if memory_service:
             memory_service.add_message(session_id, "user", user_text)
@@ -65,8 +91,8 @@ async def chat_with_afya(request: ChatRequest):
 
 
         return ChatResponse(
-            response_text=ai_response_text
-        )
+            response_text=ai_response_text, severity_level=ai_severity_response, clinics = found_clinics, hotlines=CRITICAL_SA_HOTLINES
+        ) if found_clinics else ChatResponse( response_text=ai_response_text, severity_level=ai_severity_response, hotlines=CRITICAL_SA_HOTLINES if ai_severity_response == "HIGH" else None)
 
     except Exception as e:
         print(f"Error processing chat request: {e}")
@@ -115,15 +141,14 @@ async def upload_medical_pdf(
             source_lang=language,
             target_lang=language
         )
-
-
+                    
         if memory_service:
 
             memory_service.add_message(session_id, "user", f"[Uploaded PDF] {user_prompt}")
             memory_service.add_message(session_id, "assistant", ai_response_text)
 
         return ChatResponse(
-            response_text=ai_response_text
+            response_text=ai_response_text, severity_level="LOW"
         )
 
     except Exception as e:
