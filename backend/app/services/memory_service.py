@@ -17,7 +17,7 @@ class CheckinRecord:
 
 class MemoryService:
     """
-    Handles persistent storage and retrieval of chat history and daily 
+    Handles persistent storage and retrieval of chat history and daily
     health check-ins using SQLite.
     """
     def __init__(self):
@@ -25,12 +25,12 @@ class MemoryService:
         self.conn = sqlite3.connect(DB_NAME, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
-        
+
         self._create_tables()
 
     def _create_tables(self):
         """Creates the necessary tables if they don't already exist."""
-        
+
         # 1. Chat History Table
         create_chat_table = """
         CREATE TABLE IF NOT EXISTS chat_history (
@@ -41,7 +41,7 @@ class MemoryService:
             timestamp TEXT NOT NULL
         );
         """
-        
+
         # 2. Daily Check-ins Table
         create_checkin_table = """
         CREATE TABLE IF NOT EXISTS daily_checkins (
@@ -64,7 +64,7 @@ class MemoryService:
     def add_message(self, session_id: str, role: str, content: str):
         """Adds a new message (user or assistant) to the database."""
         current_time = datetime.utcnow().isoformat()
-        
+
         insert_query = """
         INSERT INTO chat_history (session_id, role, content, timestamp)
         VALUES (?, ?, ?, ?);
@@ -78,27 +78,27 @@ class MemoryService:
         Returns messages in the format expected by the LLM.
         """
         select_query = """
-        SELECT role, content 
-        FROM chat_history 
+        SELECT role, content
+        FROM chat_history
         WHERE session_id = ?
-        ORDER BY timestamp DESC 
+        ORDER BY timestamp DESC
         LIMIT ?;
         """
         self.cursor.execute(select_query, (session_id, limit))
-        
+
         results = [dict(row) for row in self.cursor.fetchall()]
         return results[::-1] # Reverse to get chronological order
 
-   
-    def save_checkin(self, user_id: str, sleep_hours: Optional[float] = None, 
-                     mood: Optional[int] = None, hydration: Optional[int] = None, 
+
+    def save_checkin(self, user_id: str, sleep_hours: Optional[float] = None,
+                     mood: Optional[int] = None, hydration: Optional[int] = None,
                      symptoms: List[str] = None, notes: Optional[str] = None):
         """Saves a daily wellness check-in to the database."""
         current_time = datetime.utcnow().isoformat()
-        
+
         # Convert symptoms list to a JSON string for SQLite storage
         symptoms_str = json.dumps(symptoms) if symptoms else "[]"
-        
+
         insert_query = """
         INSERT INTO daily_checkins (user_id, date, sleep_hours, mood, hydration, symptoms, notes)
         VALUES (?, ?, ?, ?, ?, ?, ?);
@@ -112,7 +112,7 @@ class MemoryService:
         Used by the dynamic AI context builder to give the bot memory.
         """
         cutoff_date = (datetime.utcnow() - timedelta(days=days)).isoformat()
-        
+
         select_query = """
         SELECT date, sleep_hours, mood, hydration, symptoms, notes
         FROM daily_checkins
@@ -121,18 +121,18 @@ class MemoryService:
         """
         self.cursor.execute(select_query, (user_id, cutoff_date))
         rows = self.cursor.fetchall()
-        
+
         records = []
         for row in rows:
             # Parse the string date back into a Python datetime object
             dt = datetime.fromisoformat(row['date'])
-            
+
             # Parse the JSON string back into a Python list
             try:
                 symp_list = json.loads(row['symptoms'])
             except json.JSONDecodeError:
                 symp_list = []
-                
+
             record = CheckinRecord(
                 date=dt,
                 sleep_hours=row['sleep_hours'],
@@ -142,7 +142,7 @@ class MemoryService:
                 notes=row['notes']
             )
             records.append(record)
-            
+
         return records
 
     def close_connection(self):
@@ -156,16 +156,16 @@ if __name__ == "__main__":
     TEST_ID = "user_alpha_777"
 
     print("--- 1. Testing Chat Memory ---")
-    memory.add_message(TEST_ID, "user", "Hello Mmathando, I have been feeling anxious today.")
+    memory.add_message(TEST_ID, "user", "Hello AfyaAI, I have been feeling anxious today.")
     history = memory.get_recent_messages(TEST_ID, limit=1)
     print(f"Chat History Saved: {history}")
-    
+
     print("\n--- 2. Testing Daily Check-ins ---")
     memory.save_checkin(
-        user_id=TEST_ID, 
-        sleep_hours=5.5, 
-        mood=4, 
-        hydration=3, 
+        user_id=TEST_ID,
+        sleep_hours=5.5,
+        mood=4,
+        hydration=3,
         symptoms=["headache", "fatigue"],
         notes="Stressed about hackathon"
     )
@@ -173,5 +173,5 @@ if __name__ == "__main__":
     print(f"Latest Check-in Date: {checkins[-1].date}")
     print(f"Latest Check-in Mood: {checkins[-1].mood}/10")
     print(f"Latest Check-in Symptoms: {checkins[-1].symptoms}")
-    
+
     memory.close_connection()

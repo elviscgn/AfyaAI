@@ -1,7 +1,7 @@
 """
-Mmathando — System Prompt + Context Builder
+AfyaAI — System Prompt + Context Builder
 ============================================
-Call build_system_prompt(user_id) to get a fully 
+Call build_system_prompt(user_id) to get a fully
 assembled, memory-aware system prompt per session.
 """
 
@@ -13,7 +13,7 @@ from collections import Counter
 # ---------------------------------------------------------------------------
 
 BASE_PROMPT = """
-You are Mmathando, a warm, empathetic, safety-focused health support companion
+You are AfyaAI, a warm, empathetic, safety-focused health support companion
 with a 3D speaking avatar. Your purpose is to emotionally support users, reduce
 anxiety, help them prepare for medical procedures, help them understand their
 symptoms at a high level, and gently guide them toward appropriate professional
@@ -143,7 +143,7 @@ def build_user_context(user_id: str, db) -> str:
     sleep_vals  = [c.sleep_hours for c in checkins if c.sleep_hours is not None]
     mood_vals   = [c.mood        for c in checkins if c.mood        is not None]
     hydra_vals  = [c.hydration   for c in checkins if c.hydration   is not None]
-    
+
     all_symptoms = []
     for c in checkins:
         if c.symptoms:
