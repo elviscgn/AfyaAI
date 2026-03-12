@@ -1,85 +1,77 @@
-import Navbar from "../components/Navbar"
+import Icon from "../icons/Icon";
 
-export default function Privacy() {
+const SECTIONS = [
+  {
+    title: "Information We Collect",
+    body: "We collect information you voluntarily provide: wellness check-in data (sleep, mood, hydration), chat messages, and basic account details such as name and email. We may also collect anonymised usage data to improve the service.",
+  },
+  {
+    title: "How We Use Your Information",
+    body: "Your information personalises your wellness experience, generates relevant AI responses, and delivers daily check-in summaries. Chat content is processed solely to produce helpful replies.",
+    highlight:
+      "Your real name is never transmitted to the AI model. All messages are fully anonymised before reaching the language model — your identity stays private at every step.",
+  },
+  {
+    title: "Data Sharing & Third Parties",
+    body: "We do not sell personal data. We may share anonymised, aggregated insights with research partners. Our AI is powered by Meta Llama via encrypted API calls; no personally identifiable information is ever included in those requests.",
+  },
+  {
+    title: "Data Storage & Security",
+    body: "All data is stored on encrypted servers using AES-256 at rest and TLS 1.3 in transit. We conduct regular security audits and strictly limit access to authorised personnel only.",
+  },
+  {
+    title: "Retention of Data",
+    body: "We retain your data for as long as your account is active or as needed to deliver the service. You may request complete deletion at any time. Anonymised aggregate data may be retained for research purposes.",
+  },
+  {
+    title: "Your Rights",
+    body: "You have the right to access, correct, export, or delete your personal data. You may opt out of optional data collection via Settings. To exercise these rights, contact us at privacy@afyaai.health.",
+  },
+  {
+    title: "Children's Privacy",
+    body: "AfyaAI is not intended for users under 13. We do not knowingly collect information from minors. If we discover this has occurred, we will delete the data immediately.",
+  },
+  {
+    title: "Updates to This Policy",
+    body: "We may update this policy periodically. Significant changes will be communicated via in-app notification or email. Continued use of AfyaAI after changes are posted constitutes acceptance of the revised policy.",
+  },
+];
+
+export default function PrivacyPage() {
   return (
-    <div style={{ paddingTop: "60px" }}>
-      <Navbar />
-      <h1>Privacy Policy</h1><br />
-      <p>AfyaAI is commited to protecting your privacy and ensuring your personal health and wellness information is handled safely.This Privacy Policy explans what data we collect, how we use it, and right as a user</p>
-      
-      
+    <div className="afya-inner afya-fi">
+      <div className="afya-wrap">
+        <div className="afya-phero">
+          <p className="afya-eyebrow" style={{ marginBottom: 13 }}>Legal</p>
+          <h1 className="afya-ph1">Privacy Policy</h1>
+          <p style={{ fontSize: 11.5, color: "var(--a-cream3)", marginBottom: 14 }}>
+            Effective January 1, 2025 &nbsp;·&nbsp; Last updated March 2025
+          </p>
+          <p className="afya-plead">
+            Your privacy matters. A plain-language explanation of how AfyaAI collects, uses, and protects your information.
+          </p>
+        </div>
 
-      <h2>1. Information we may collect</h2>
-      <p>When you use AfyaAI, we may collect:</p>
-      <ul>
-        <li><strong>Personal information: </strong>Name, Age, Email, or Login details.</li>
-        <li><strong>Health-related information: </strong>Sleep, Hydration, Mood, Symptoms, and Wellness Goals.</li>
-        <li><strong>Location data: </strong>If using "Nearest Medical facilities" feature.</li>
-    
-      </ul>
-      <p>We do not collect information you do not provide or use  it without your consent.</p>
-
-      
-
-      <h2>3. Data sharing and Third Parties</h2>
-      <ul>
-        <li>We do <strong>not</strong> sell or share your personal information with adverstisers or third-party</li>
-      </ul>
-
-      <h2>2. How we Use Your information</h2>
-      <p> Your data is used to provide helpul guidance ,, trackwellness, and improve app functionality.</p>
-      <p><strong>Message Processing and Privacy:</strong>
-      When you send a message , it is fowarded to our AI model (Llama) to generate a response. your real name is <strong>never</strong>sent to the model. Instead, we replace your name with a placeholder before sending it.When the response is returned, we replace the placeholder with your actual name on your screen. This ensures the model never sees personal identity data</p>
-
-     
-     
-     <h2>3. Data sharing and Third Parties</h2>
-     <ul>
-      <li>We do <strong>not</strong> sell or share your personal information with advertiser or thid-party companies</li>
-      <li>Third-party services we use:
-        <ul>
-          <li>llama API for AI responses (with anonymized data).</li>
-          <li>Google Maps API for location features.</li>
-          <li>Google login for analytics or AI processing is anonymized.</li>
-        </ul>
-      </li>
-     </ul>
-
-     
-
-     <h2>4. Data Storage and Security</h2>
-     <ul>
-      <li> Data is stored securely on protected servers.</li>
-      <li>Personal information is encrypted where possible.</li>
-      <li>Only authorized personnel can access sensitive data.</li>
-      <li>Data used for analytics or AI processing is anonymized</li>
-     </ul>
-
-     
-
-     <h2>5. Retention of Data</h2>
-     <p>We retain your data only as long as necessary to provide the service or comply legal  obligation. You may request deletion</p>
-
-     
-
-     <h2>6. Your Rights</h2>
-     <ul>
-      <li>Access your Data</li>
-      <li>Update or correct information.</li>
-      <li>Request deletion of account and associated data</li>
-      <li>Withdraw consent for data processing or location access</li>
-     </ul>
-    
-    
-
-    <h2>7. Children's Privacy</h2>
-    <p>AfyaAI is not intended for users under the age of 12 years. We do not knowingly collect data from children</p>
-
-    
-
-    <h2>8. Update to This Policy</h2>
-    <p>We may update this Privacy Policy from time to time. Any chnages will be posted within the app , with effective date updated</p>
-
+        <div className="afya-plist">
+          {SECTIONS.map((s, i) => (
+            <div className="afya-pcard" key={s.title}>
+              <div className="afya-phead">
+                <div className="afya-pnum">{i + 1}</div>
+                <div className="afya-ptitle">{s.title}</div>
+              </div>
+              <div className="afya-pbody">
+                {s.body}
+                {s.highlight && (
+                  <div className="afya-phighlight">
+                    <Icon n="lock" size={13} stroke="var(--a-greenbr)" />
+                    <span>{s.highlight}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
-  )
+  );
 }
