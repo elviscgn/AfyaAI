@@ -1,10 +1,12 @@
-from fastapi import APIRouter, HTTPException,File,UploadFile,Form
+from fastapi import APIRouter, HTTPException,File,UploadFile,Form, WebSocket, WebSocketDisconnect
 from app.services.pdf_service import extract_text_from_pdf
 from app.schemas.request_models import ChatRequest, ChatResponse, CheckInRequest,CheckInResponse
 from app.services.llama_service import LlamaClient
 from app.services.memory_service import MemoryService
 from app.services.ai_context import build_system_prompt
 from app.services.maps_service import CRITICAL_SA_HOTLINES, get_nearest_clinics
+from app.services.tts_service import stream_tts_and_visemes
+import json
 
 
 
@@ -181,3 +183,35 @@ async def log_daily_checkin(request: CheckInRequest):
     except Exception as e:
         print(f"Error saving daily check-in: {e}")
         raise HTTPException(status_code=500, detail="Failed to save check-in data.")
+    
+
+@router.websocket("/ws/chat")
+async def chat_stream(websocket: WebSocket):
+    """
+    Persistent connection for real-time text, audio, and viseme delivery.
+    """
+    await websocket.accept()
+    
+    try:
+        while True:
+            # 1. Wait for the frontend to send a message
+            raw_data = await websocket.receive_text()
+            data = json.loads(raw_data)
+            user_text = data.get("user_input", "")
+            
+            # TODO: Pass user_text to your Llama 3 model here just like in your POST route.
+            # For right now, we will simulate the AI's response:
+            ai_response_text = "I know you've been battling headaches lately. I am so sorry to hear that. How are you feeling right now?"
+            
+            # 2. Instantly send the text response so the UI chat bubble updates
+            await websocket.send_text(json.dumps({
+                "type": "text_response",
+                "text": ai_response_text
+            }))
+            
+            # 3. Stream the Audio & Visemes chunk by chunk to the 3D Avatar
+            async for chunk_payload in stream_tts_and_visemes(ai_response_text):
+                await websocket.send_text(chunk_payload)
+                
+    except WebSocketDisconnect:
+        print("Frontend disconnected from the chat stream.")
