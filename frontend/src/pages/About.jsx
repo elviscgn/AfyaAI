@@ -1,202 +1,95 @@
-import Navbar from "../components/Navbar";
+// components/afya/AboutPage.jsx
 
-export default function About() {
+// import Icon from "../../icons/Icon";
+import Icon from "../icons/Icon";
+
+const FEATS = [
+  { icon: "shield",  text: "Symptom-based guidance — informative, never diagnostic" },
+  { icon: "smile",   text: "Daily wellness check-ins for sleep, mood, and hydration" },
+  { icon: "bell",    text: "Calm explanations for recovery and medical procedures" },
+  { icon: "mapPin",  text: "Nearby clinic and hospital suggestions by location" },
+  { icon: "volume2", text: "Hotline references for urgent health concerns" },
+];
+
+const TEAM = [
+  {
+    name: "Elvis Chege",
+    role: "Team Lead · Frontend · 3D Model",
+    src:  "https://avatars.githubusercontent.com/u/96030189?v=4",
+  },
+  {
+    name: "Mphele Moswane",
+    role: "Software Developer · Backend · AI Integration",
+    src:  "https://avatars.githubusercontent.com/u/132210848?v=4",
+  },
+];
+
+export default function AboutPage() {
   return (
-    <div style={{ paddingTop: "60px" }}>
-      <Navbar />
+    <div className="afya-inner afya-fi">
+      <div className="afya-wrap">
 
-      <style>{`
-        .about-container {
-          max-width: 900px;
-          margin: auto;
-          padding: 20px;
-          font-family: "Zain", sans-serif;
-          font-style: normal;
-          font-weight: 500;
-          font-size: 0.8rem;
-          color: #053010ff;
-          font-size: 0.95rem;
-
-
-        }
-
-        h1 {
-          font-size: 2rem;
-          color:  #043310ff;
-          margin-bottom: 20px;
-          text-align: center
-        }
-
-        .section-title {
-          font-size: 2rem;
-          color: #0a3c17ff;
-          margin-top: 30px;
-          margin-bottom: 12px;
-          font-weight: 600;
-          text-align: center;
-
-        }
-
-        .info-box {
-          background:  #b3efc6ff;
-          padding: 15px 20px;
-          border-radius: 11px;
-          border: 1px solid  #0c652aff;
-          margin-bottom:20px  ;
-          line-height: 1.6;
-          max-width: 700px;
-
-
-          
-
-        }
-
-        .offer-list {
-          background: #b3efc6ff;
-          padding: 15px 20px;
-          border-radius: 25px;
-          border: 1px solid #0c652aff;
-          list-style: none;
-          max-width: 600px;
-          margin: 0 auto;
-          text-align: ;
-          color: #053010ff;
-          
-          
-        }
-
-        .offer-list li {
-          padding: 8px 0;
-          font-size: 0.95rem;
-          text-align: center;
-          
-          
-
-        }
-
-        .team-grid {
-          display: flex;
-          gap: 20px;
-          margin-top: 20px;
-          flex-wrap: wrap;
-          justify-content: center;
-        }
-
-        .team-card {
-          background: #b3efc6ff;
-          width: 160px;
-          padding: 12px;
-          border-radius: 11px;
-          border: 1px solid #0c652aff;
-          text-align: center;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-
-        .team-name {
-          margin: 10px 0 8px 0;
-          font-weight: 600;
-          color: #043310ff;
-          font-size: 1.2rem;
-        }
-
-        .team-role {
-          font-size: 0.95rem;
-          color: #043310ff;
-          margin-top: 8px;
-          line-height: 1.2;
-        }
-
-        .github-pfp {
-          width: 45px;
-          height: 45px;
-          border-radius: 50%;
-          border: 2px solid #000;
-          object-fit: cover;
-          cursor: pointer;
-          margin: 0 auto;
-        }
-      `}</style>
-
-      <div className="about-container">
-        <h1>About</h1>
-
-        <div className="info-box">
-          AfyaAI is a lightweight health assistant with a 3D avatar, text + voice
-          responses, and quick daily check-ins. Built with React + TypeScript and FastAPI,
-          it uses Llama for reasoning and guidance.
+        {/* Hero */}
+        <div className="afya-about-hero">
+          <p className="afya-eyebrow" style={{ marginBottom: 14 }}>Who We Are</p>
+          <h1 className="afya-ah1">
+            Calm, accessible<br />
+            <em>health guidance</em><br />
+            for everyone.
+          </h1>
+          <p className="afya-alead">
+            AfyaAI is a lightweight health companion powered by a live animated avatar and conversational AI.
+            Built on React and FastAPI, driven by Meta Llama — bringing clear, warm health guidance to anyone, anywhere.
+          </p>
         </div>
 
-       
-        <div className="info-box">
-          AfyaAI was created to make everyday health guidance more accessible, calm,
-          and supportive. Many people struggle with knowing whether symptoms are serious,
-          when to seek medical care, or how to maintain healthy habits. AfyaAI offers
-          gentle, non-diagnostic guidance and reassurance to help people feel safer and
-          more informed.
+        {/* Mission */}
+        <div className="afya-sec">
+          <p className="afya-eyebrow" style={{ marginBottom: 12 }}>Our Mission</p>
+          <h2 className="afya-sh2">Why AfyaAI exists</h2>
+          <p className="afya-sp">
+            Reliable health information shouldn't be gated by geography, income, or the fear of a waiting room.
+            AfyaAI was built from a conviction that everyone deserves a calm, knowledgeable companion to navigate
+            everyday health questions — without the anxiety of a cold search engine or an unpredictable late-night forum.
+          </p>
         </div>
 
-        <h2 className="section-title">What AfyaAI Offers</h2>
-
-        <ul className="offer-list">
-          <li>Symptom-based guidance (non-diagnostic)</li>
-          <li>Daily wellness check-ins</li>
-          <li>Calm explanations for recovery & procedures</li>
-          <li>Nearby clinic/hospital suggestions</li>
-          <li>Hotline support for urgent concerns</li>
-        </ul>
-
-        <h2 className="section-title">Our Team</h2>
-
-        <div className="team-grid">
-          <div className="team-card">
-            <div className="team-name">Nothando Ndlovu</div>
-            <a href="https://github.com/nothando-debug" target="_blank">
-              <img
-                src="https://github.com/nothando-debug.png"
-                alt="Nothando GitHub"
-                className="github-pfp"
-              />
-            </a>
-            <div className="team-role">Software Developer | Backend</div>
+        {/* Features */}
+        <div className="afya-sec">
+          <p className="afya-eyebrow" style={{ marginBottom: 12 }}>Capabilities</p>
+          <h2 className="afya-sh2">What AfyaAI Offers</h2>
+          <div className="afya-fgrid">
+            {FEATS.map(f => (
+              <div className="afya-fitem" key={f.text}>
+                <div className="afya-ficon">
+                  <Icon n={f.icon} size={14} stroke="var(--a-greenbr)" />
+                </div>
+                {f.text}
+              </div>
+            ))}
           </div>
+        </div>
 
-          <div className="team-card">
-            <div className="team-name">Elvis Chege</div>
-            <a href="https://github.com/elviscgn" target="_blank">
-              <img
-                src="https://github.com/elviscgn.png"
-                alt="Elvis GitHub"
-                className="github-pfp"
-              />
-            </a>
-            <div className="team-role">Team Lead | Frontend | 3D Model</div>
+        {/* Team */}
+        <div className="afya-sec">
+          <p className="afya-eyebrow" style={{ marginBottom: 12 }}>The Team</p>
+          <h2 className="afya-sh2">Our Team</h2>
+          <div className="afya-tgrid">
+            {TEAM.map(m => (
+              <div className="afya-tcard" key={m.name}>
+                <div className="afya-timg">
+                  <img src={m.src} alt={m.name} onError={e => { e.target.style.display = "none"; }} />
+                  <Icon n="user" size={24} stroke="var(--a-cream3)" />
+                </div>
+                <div className="afya-tname">{m.name}</div>
+                <div className="afya-trole">{m.role}</div>
+              </div>
+            ))}
           </div>
+        </div>
 
-          <div className="team-card">
-            <div className="team-name">Mmabatho Thathana</div>
-            <a href="https://github.com/Mmabatho-21" target="_blank">
-              <img
-                src="https://github.com/Mmabatho-21.png"
-                alt="Mmabatho GitHub"
-                className="github-pfp"
-              />
-            </a>
-            <div className="team-role">Software Developer | UX/UI</div>
-          </div>
-
-          <div className="team-card">
-            <div className="team-name">Mphele Moswane</div>
-            <a href="https://github.com/Mphele" target="_blank">
-              <img
-                src="https://github.com/Mphele.png"
-                alt="Mphele GitHub"
-                className="github-pfp"
-              />
-            </a>
-            <div className="team-role">Software Developer | Backend | AI Integration</div>
-          </div>
+        <div className="afya-footer">
+          Built with care by AfyaAI's MetaMedics &nbsp;·&nbsp; Powered by Meta Llama
         </div>
       </div>
     </div>
