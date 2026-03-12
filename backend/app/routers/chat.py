@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException,File,UploadFile,Form, WebSocket, WebSocketDisconnect
+from fastapi.concurrency import run_in_threadpool
 from app.services.pdf_service import extract_text_from_pdf
 from app.schemas.request_models import ChatRequest, ChatResponse, CheckInRequest,CheckInResponse
 from app.services.llama_service import LlamaClient
@@ -6,6 +7,8 @@ from app.services.memory_service import MemoryService
 from app.services.ai_context import build_system_prompt
 from app.services.maps_service import CRITICAL_SA_HOTLINES, get_nearest_clinics
 from app.services.tts_service import stream_tts_and_visemes
+from app.services.llama_service import LlamaClient
+from app.services.memory_service import MemoryService
 import json
 
 
@@ -185,33 +188,80 @@ async def log_daily_checkin(request: CheckInRequest):
         raise HTTPException(status_code=500, detail="Failed to save check-in data.")
     
 
+llama_client = LlamaClient()
+memory_service = MemoryService()
+
 @router.websocket("/ws/chat")
 async def chat_stream(websocket: WebSocket):
     """
     Persistent connection for real-time text, audio, and viseme delivery.
+    Integrates Llama 3 generation and SQLite memory storage.
     """
     await websocket.accept()
     
+    # Hardcoded user ID for the hackathon demo
+    session_user_id = "demo_user_01"
+    
+    # Define Afya's core personality
+    base_system_prompt = (
+        "You are Afya, an empathetic, highly intelligent health and wellness assistant. "
+        "Your goal is to support the user, acknowledge their symptoms, and offer gentle, practical advice. "
+        "Keep your responses conversational, warm, and relatively brief (2-3 sentences max) so they translate well to speech."
+    )
+    
     try:
         while True:
-            # 1. Wait for the frontend to send a message
+            # 1. Receive text from frontend
             raw_data = await websocket.receive_text()
             data = json.loads(raw_data)
             user_text = data.get("user_input", "")
             
-            # TODO: Pass user_text to your Llama 3 model here just like in your POST route.
-            # For right now, we will simulate the AI's response:
-            ai_response_text = "I know you've been battling headaches lately. I am so sorry to hear that. How are you feeling right now?"
+            print(f"User Input Received: {user_text}")
+
+            # 2. Memory Retrieval & Context Formatting
+            recent_history = memory_service.get_recent_messages(session_user_id, limit=5)
             
-            # 2. Instantly send the text response so the UI chat bubble updates
+            history_text = ""
+            if recent_history:
+                history_text = "\n\nPrevious Conversation Context:\n"
+                for msg in recent_history:
+                    history_text += f"{msg['role'].capitalize()}: {msg['content']}\n"
+            
+            # Combine the base personality with the injected memory
+            dynamic_system_prompt = base_system_prompt + history_text
+
+            # 3. Llama 3 Generation (using threadpool to prevent blocking the WebSocket)
+            ai_response_text = await run_in_threadpool(
+                llama_client.generate_content,
+                system_prompt=dynamic_system_prompt,
+                user_input=user_text
+            )
+            
+            print(f"Afya Generated: {ai_response_text}")
+
+            # 4. Memory Storage
+            # Save the user's input
+            memory_service.add_message(session_user_id, "user", user_text)
+            # Save Afya's response
+            memory_service.add_message(session_user_id, "assistant", ai_response_text)
+
+            # 5. The Stream Trigger
+            # First, send the plain text so the frontend chat bubble appears instantly
             await websocket.send_text(json.dumps({
                 "type": "text_response",
                 "text": ai_response_text
             }))
             
-            # 3. Stream the Audio & Visemes chunk by chunk to the 3D Avatar
-            async for chunk_payload in stream_tts_and_visemes(ai_response_text):
-                await websocket.send_text(chunk_payload)
+            # Second, stream the generated audio and visemes using the British fallback voice
+            try:
+                async for chunk_payload in stream_tts_and_visemes(ai_response_text):
+                    await websocket.send_text(chunk_payload)
+            except Exception as e:
+                print(f"CRITICAL TTS ERROR: {str(e)}")
+                await websocket.send_text(json.dumps({
+                    "type": "text_response",
+                    "text": f"BACKEND AUDIO ERROR: {str(e)}"
+                }))
                 
     except WebSocketDisconnect:
         print("Frontend disconnected from the chat stream.")

@@ -7,6 +7,7 @@ Here is the clean, text-only README in a standard code block. You should be able
 
 1. **Install Dependencies:**
    ```bash
+   make sure python version 3.13.5 is being used
    pip install -r requirements.txt
 
 ```
