@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException,File,UploadFile,Form
 from app.services.pdf_service import extract_text_from_pdf
-from app.schemas.request_models import ChatRequest, ChatResponse
+from app.schemas.request_models import ChatRequest, ChatResponse, CheckInRequest,CheckInResponse
 from app.services.llama_service import LlamaClient
 from app.services.memory_service import MemoryService
 from app.services.ai_context import build_system_prompt
@@ -157,3 +157,27 @@ async def upload_medical_pdf(
             status_code=500,
             detail=f"Failed to process document: Ensure the file is a readable PDF. Details: {e}"
         )
+
+@router.post("/checkin", response_model=CheckInResponse)
+async def log_daily_checkin(request: CheckInRequest):
+    """
+    Receives daily health metrics from the frontend and saves them to the database.
+    """
+    if not memory_service:
+        raise HTTPException(status_code=500, detail="Database service is not initialized.")
+
+    try:
+        memory_service.save_checkin(
+            user_id=request.session_id,
+            sleep_hours=request.sleep_hours,
+            mood=request.mood,
+            hydration=request.hydration,
+            symptoms=request.symptoms,
+            notes=None  
+        )
+
+        return CheckInResponse(status="success")
+
+    except Exception as e:
+        print(f"Error saving daily check-in: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save check-in data.")
