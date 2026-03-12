@@ -3,7 +3,7 @@ import { useGLTF, useFBX, useAnimations } from "@react-three/drei"
 import { SkeletonUtils } from "three-stdlib"
 import { useFrame, useLoader } from "@react-three/fiber"
 import * as THREE from "three"
-import { useControls } from "leva"
+import { useControls, folder } from "leva"
 
 const corresponding = {
   A: "viseme_PP",
@@ -18,8 +18,8 @@ const corresponding = {
 }
 
 export function Model(props) {
-  // Load 3D model
-  const { scene } = useGLTF("public/models/692c2a53176ba02c5babdf21.glb")
+  // Load 3D model – corrected path
+  const { scene } = useGLTF("/models/692c2a53176ba02c5babdf21.glb")
 
   // Load animations
   const idleFBX = useFBX("/animations/idle.fbx")
@@ -50,7 +50,7 @@ export function Model(props) {
       smoothMorphTarget: true,
       morphTargetSmoothing: 0.5,
       script: { value: "welcome", options: ["welcome"] },
-    })
+    }, { collapsed: true, hidden: true })
 
   const audio = useMemo(() => new Audio(`/audio/${script}.wav`), [script])
   const jsonFile = useLoader(THREE.FileLoader, `/audio/${script}.json`)
@@ -80,17 +80,16 @@ export function Model(props) {
 
   // Play audio and set animation
   useEffect(() => {
-  if (playAudio) {
-    audio.play()
-    requestAnimationFrame(() => {
-      setAnimation(script === "welcome" ? "greeting" : "idle")
-    })
-  } else {
-    audio.pause()
-    requestAnimationFrame(() => setAnimation("idle"))
-  }
-}, [playAudio, script])
-
+    if (playAudio) {
+      audio.play()
+      requestAnimationFrame(() => {
+        setAnimation(script === "welcome" ? "greeting" : "idle")
+      })
+    } else {
+      audio.pause()
+      requestAnimationFrame(() => setAnimation("idle"))
+    }
+  }, [playAudio, script])
 
   // Frame loop for lip-sync and head follow
   useFrame((state) => {
@@ -136,4 +135,4 @@ export function Model(props) {
   return <group ref={group} {...props} dispose={null}><primitive object={clone} /></group>
 }
 
-useGLTF.preload("public/models/692c2a53176ba02c5babdf21.glb")
+useGLTF.preload("/models/692c2a53176ba02c5babdf21.glb")

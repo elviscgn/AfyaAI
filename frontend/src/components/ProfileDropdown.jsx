@@ -1,12 +1,18 @@
 import { useState, useRef, useEffect } from "react"
 import { FaSignOutAlt } from "react-icons/fa"
-import pfp from "../assets/pfp.jpeg"
 
-export default function ProfileDropdown() {
+// Replace with your actual asset or a URL once auth is set up
+const PLACEHOLDER_PFP = "https://github.com/elviscgn.png"
+
+export default function ProfileDropdown({ user }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
-  // Close dropdown if click outside
+  // Swap these out when you wire up real auth
+  const displayName  = user?.name  || "Elvis Chege"
+  const displayEmail = user?.email || "elvischege@gmail.com"
+  const displayPfp   = user?.avatar || PLACEHOLDER_PFP
+
   useEffect(() => {
     function handleClickOutside(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false)
@@ -17,35 +23,25 @@ export default function ProfileDropdown() {
 
   return (
     <div style={{ position: "relative" }} ref={ref}>
-      {/* Profile pic */}
       <img
-        src={pfp}
+        src={displayPfp}
         alt="Profile"
         style={profileStyle}
         onClick={() => setOpen(!open)}
       />
 
-      {/* Dropdown */}
-      <div
-        style={{
-          ...dropdownStyle,
-          opacity: open ? 1 : 0,
-          transform: open ? "translateY(0px)" : "translateY(-5px)",
-          pointerEvents: open ? "auto" : "none"
-        }}
-      >
-        {/* Profile info */}
-        <img
-          src={pfp}
-          alt="Profile"
-          style={{ width: 50, height: 50, borderRadius: "50%", marginBottom: 6 }}
-        />
-        <p style={nameStyle}>Elvis Chege</p>
-        <p style={emailStyle}>elvischege@gmail.com</p>
+      <div style={{
+        ...dropdownStyle,
+        opacity: open ? 1 : 0,
+        transform: open ? "translateY(0px)" : "translateY(-5px)",
+        pointerEvents: open ? "auto" : "none"
+      }}>
+        <img src={displayPfp} alt="Profile" style={{ width: 50, height: 50, borderRadius: "50%", marginBottom: 6 }} />
+        <p style={nameStyle}>{displayName}</p>
+        <p style={emailStyle}>{displayEmail}</p>
 
         <hr style={dividerStyle} />
 
-        {/* Logout button */}
         <button style={logoutButtonStyle}>
           <FaSignOutAlt style={{ marginRight: 6 }} /> Logout
         </button>
@@ -54,7 +50,6 @@ export default function ProfileDropdown() {
   )
 }
 
-// Styles
 const profileStyle = {
   width: 36,
   height: 36,
@@ -80,18 +75,8 @@ const dropdownStyle = {
   zIndex: 20
 }
 
-const nameStyle = {
-  fontWeight: 600,
-  margin: "2px 0",
-  color: "#1F2937",
-  fontSize: 14
-}
-
-const emailStyle = {
-  fontSize: 11,
-  color: "#6B7280",
-  margin: "2px 0 6px 0"
-}
+const nameStyle  = { fontWeight: 600, margin: "2px 0", color: "#1F2937", fontSize: 14 }
+const emailStyle = { fontSize: 11, color: "#6B7280", margin: "2px 0 6px 0" }
 
 const dividerStyle = {
   width: "100%",
@@ -115,3 +100,4 @@ const logoutButtonStyle = {
   justifyContent: "center",
   transition: "background 0.2s"
 }
+
