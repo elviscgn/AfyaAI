@@ -15,3 +15,14 @@ class ChatResponse(BaseModel):
     severity_level:str
     clinics: Optional[List[Dict[str, Any]]] = None
     hotlines: Optional[Dict[str, str]] = None
+
+
+class CheckInRequest(BaseModel):
+    session_id:str
+    sleep_hours:Optional[float] = None
+    mood:Optional[int]=None
+    hydration:Optional[int]=None
+    symptoms:Optional[List[str]]=None
+
+class CheckInResponse(BaseModel):
+    status:str="success"

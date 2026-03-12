@@ -1,12 +1,6 @@
-"""
-AfyaAI — System Prompt + Context Builder
-============================================
-Call build_system_prompt(user_id) to get a fully
-assembled, memory-aware system prompt per session.
-"""
-
 from datetime import datetime, timedelta
 from collections import Counter
+from app.services.memory_service import MemoryService
 
 # ---------------------------------------------------------------------------
 # 1. BASE SYSTEM PROMPT
@@ -125,9 +119,7 @@ VIII. RESPONSE FORMAT
 3. [IF HIGH: DO NOT ASK A QUESTION. Give urgent advice only.]
 4. [SEVERITY: LEVEL]
 """
-# ---------------------------------------------------------------------------
-# 2. CONTEXT BUILDER
-# ---------------------------------------------------------------------------
+
 
 def build_user_context(user_id: str, db) -> str:
     """
@@ -142,7 +134,6 @@ def build_user_context(user_id: str, db) -> str:
     if not checkins:
         return ""
 
-    # ---- aggregate --------------------------------------------------------
     sleep_vals  = [c.sleep_hours for c in checkins if c.sleep_hours is not None]
     mood_vals   = [c.mood        for c in checkins if c.mood        is not None]
     hydra_vals  = [c.hydration   for c in checkins if c.hydration   is not None]
@@ -156,14 +147,12 @@ def build_user_context(user_id: str, db) -> str:
     avg_mood   = round(sum(mood_vals)   / len(mood_vals),   1) if mood_vals   else None
     avg_hydra  = round(sum(hydra_vals)  / len(hydra_vals),  1) if hydra_vals  else None
 
-    # deduplicate + count symptoms
     symptom_counts = Counter(all_symptoms)
     top_symptoms = [s for s, _ in symptom_counts.most_common(3)]
 
     last_checkin = max(c.date for c in checkins)
     days_since   = (datetime.utcnow() - last_checkin).days
 
-    # ---- trend flags (simple heuristics) ----------------------------------
     flags = []
 
     if avg_sleep is not None and avg_sleep < 6:
@@ -180,11 +169,10 @@ def build_user_context(user_id: str, db) -> str:
     if top_symptoms:
         flags.append(f"recurring symptoms: {', '.join(top_symptoms)}")
 
-    # ---- format -----------------------------------------------------------
     lines = [
-        "The following is private context about this user's recent health history.",
-        "Use it to personalise your opening and any responses, but never recite",
-        "raw numbers at the user — translate patterns into warm, human language.\n"
+        "CRITICAL USER CONTEXT (From their daily health logs over the last 7 days):",
+        "You MUST treat this information as established facts. The user has already reported these issues to you.",
+        "Use this data to personalise your response. Do not recite raw numbers.\n"
     ]
 
     lines.append(f"Last check-in: {days_since} day(s) ago")
@@ -192,27 +180,31 @@ def build_user_context(user_id: str, db) -> str:
     if avg_sleep  is not None: lines.append(f"Avg sleep (7 days): {avg_sleep} hrs")
     if avg_mood   is not None: lines.append(f"Avg mood  (7 days): {avg_mood}/10")
     if avg_hydra  is not None: lines.append(f"Avg hydration:      {avg_hydra}/10")
-    if top_symptoms:           lines.append(f"Recurring symptoms: {', '.join(top_symptoms)}")
+    
+    if top_symptoms:           
+        lines.append(f"\nKNOWN SYMPTOMS: The user has ALREADY reported experiencing {', '.join(top_symptoms)}. DO NOT ask if they have these symptoms. Instead, ask how these specific symptoms are feeling today.")
 
     if flags:
-        lines.append("\nKey patterns to acknowledge warmly if relevant:")
+        lines.append("\nKey patterns you MUST acknowledge warmly:")
         for f in flags:
             lines.append(f"  • {f}")
 
     return "\n".join(lines)
 
-# ---------------------------------------------------------------------------
-# 3. FINAL ASSEMBLER  — call this once per session
-# ---------------------------------------------------------------------------
 
-def build_system_prompt(user_id: str, db=None) -> str:
+def build_system_prompt(user_id: str, db: MemoryService = None) -> str:
     """
-    Returns the fully assembled system prompt for a given user.
-    Pass db=None (or omit) for anonymous / first-time users.
+    Assembles the final prompt. If a database is provided, it injects 
+    aggregated health patterns into the context block.
     """
     if db is not None:
         context = build_user_context(user_id, db)
     else:
-        context = "No check-in history available yet. Greet the user warmly and introduce yourself."
+        context = "No check-in history available. Greet the user warmly as Afya."
 
+    
+    if not context:
+        context = "No recent health data available yet."
+
+   
     return BASE_PROMPT.format(user_context=context)
