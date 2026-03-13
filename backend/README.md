@@ -1,3 +1,4 @@
+```markdown
 # AfyaAI Backend - Core Engine
 
 ## Quick Start: Run the Server

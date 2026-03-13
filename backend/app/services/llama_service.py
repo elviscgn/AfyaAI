@@ -39,12 +39,9 @@ class LlamaClient:
         
         english_input = self.translator.translate_to_english(user_input, source_lang)
         
-        final_response = "I apologize, an unexpected error occurred while processing your request. Please try again."
-
         english_response = ""
         
         try:
-            
             if self.client_type == "GEMINI":
                 config = types.GenerateContentConfig(system_instruction=system_prompt)
                 
@@ -79,15 +76,32 @@ class LlamaClient:
                 english_response = response.json()['choices'][0]['message']['content'].strip()
                 
             else:
-                return "Internal Error: Client Type not recognized."
+                return "Internal Error: Client Type not recognized. [SEVERITY: LOW]"
                 
-            final_response = self.translator.translate_from_english(english_response, target_lang)
+            # 1. Default to LOW if the AI failed to generate a tag
+            severity_tag = "[SEVERITY: LOW]"
+            clean_english_text = english_response
+
+            # 2. Extract the exact English tag before translation
+            if "[SEVERITY:" in english_response:
+                parts = english_response.split("[SEVERITY:")
+                clean_english_text = parts[0].strip()
+                
+                # Safely extract just the severity level (LOW, MEDIUM, HIGH)
+                severity_level = parts[1].strip().replace("]", "")
+                severity_tag = f"[SEVERITY: {severity_level}]"
+
+            # 3. Translate ONLY the conversational text
+            translated_text = self.translator.translate_from_english(clean_english_text, target_lang)
+            
+            # 4. Reattach the untranslated English tag to the very end
+            final_response = f"{translated_text} {severity_tag}"
             
             return final_response
 
         except requests.exceptions.HTTPError as e:
             print(f"LLAMA API Error (HTTP Status): {e}")
-            return "I apologize, the AI connection failed. Please ensure your API key is correct and try again."
+            return "I apologize, the AI connection failed. Please ensure your API key is correct and try again. [SEVERITY: LOW]"
         except Exception as e:
             print(f"LLM API Error during processing: {e}")
-            return "I apologize, but I am having trouble connecting to my central brain. Please try again later."
+            return "I apologize, but I am having trouble connecting to my central brain. Please try again later. [SEVERITY: LOW]"

@@ -195,71 +195,123 @@ memory_service = MemoryService()
 async def chat_stream(websocket: WebSocket):
     """
     Persistent connection for real-time text, audio, and viseme delivery.
-    Integrates Llama 3 generation and SQLite memory storage.
+    Integrates Llama 3 generation, SQLite memory, dynamic health context, and emergency maps.
     """
     await websocket.accept()
     
-    # Hardcoded user ID for the hackathon demo
-    session_user_id = "demo_user_01"
-    
-    # Define Afya's core personality
-    base_system_prompt = (
-        "You are Afya, an empathetic, highly intelligent health and wellness assistant. "
-        "Your goal is to support the user, acknowledge their symptoms, and offer gentle, practical advice. "
-        "Keep your responses conversational, warm, and relatively brief (2-3 sentences max) so they translate well to speech."
-    )
-    
     try:
         while True:
-            # 1. Receive text from frontend
+            # 1. Receive text and dynamic configuration from frontend
             raw_data = await websocket.receive_text()
             data = json.loads(raw_data)
-            user_text = data.get("user_input", "")
             
-            print(f"User Input Received: {user_text}")
+            user_text = data.get("user_input", "")
+            session_user_id = data.get("session_id")
+            selected_language = data.get("language", "english")
+            
+            # Extract coordinates for the maps feature
+            latitude = data.get("latitude")
+            longitude = data.get("longitude")
+            
+            if not session_user_id:
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "text": "Session ID is required to process the message."
+                }))
+                continue
+                
+            print(f"User Input Received: {user_text} | Session: {session_user_id}")
 
             # 2. Memory Retrieval & Context Formatting
-            recent_history = memory_service.get_recent_messages(session_user_id, limit=5)
-            
-            history_text = ""
-            if recent_history:
-                history_text = "\n\nPrevious Conversation Context:\n"
-                for msg in recent_history:
-                    history_text += f"{msg['role'].capitalize()}: {msg['content']}\n"
-            
-            # Combine the base personality with the injected memory
-            dynamic_system_prompt = base_system_prompt + history_text
+            chat_history = []
+            if memory_service:
+                chat_history = memory_service.get_recent_messages(session_user_id)
 
-            # 3. Llama 3 Generation (using threadpool to prevent blocking the WebSocket)
-            ai_response_text = await run_in_threadpool(
-                llama_client.generate_content,
-                system_prompt=dynamic_system_prompt,
-                user_input=user_text
+            history_context = ''
+            for message in chat_history:
+                if message['role'] == 'user':
+                    history_context += f"USER: {message['content']}\n"
+                else:
+                    history_context += f"ASSISTANT: {message['content']}\n"
+
+            full_user_input = (
+                f"PREVIOUS CONVERSATION:\n{history_context}\n\n"
+                f"USER'S NEW MESSAGE:\n{user_text}\n\n"
+                f"[CRITICAL SYSTEM DIRECTIVE: You MUST append the severity tag (e.g., [SEVERITY: HIGH]) to the very end of THIS specific response. Do NOT wait for more context to assign a severity level. Assess the immediate risk based strictly on the current message.]"
+            )
+
+            # 3. Dynamic Prompting & Llama 3 Generation
+            system_prompt_dynamic = build_system_prompt(user_id=session_user_id, db=memory_service)
+            
+            raw_ai_response = await run_in_threadpool(
+                ai_client.generate_content,
+                system_prompt=system_prompt_dynamic,
+                user_input=full_user_input,
+                source_lang=selected_language,
+                target_lang=selected_language
             )
             
-            print(f"Afya Generated: {ai_response_text}")
-
-            # 4. Memory Storage
-            # Save the user's input
-            memory_service.add_message(session_user_id, "user", user_text)
-            # Save Afya's response
-            memory_service.add_message(session_user_id, "assistant", ai_response_text)
-
-            # 5. The Stream Trigger
-            # First, send the plain text so the frontend chat bubble appears instantly
-            await websocket.send_text(json.dumps({
-                "type": "text_response",
-                "text": ai_response_text
-            }))
+            # 4. Severity Extraction & Maps Integration
+            clean_ai_text = raw_ai_response
+            severity_level = "LOW"
+            found_clinics = None
             
-            # Second, stream the generated audio and visemes using the British fallback voice
+            if "[SEVERITY:" in raw_ai_response:
+                response_split = raw_ai_response.split("[SEVERITY:")
+                clean_ai_text = response_split[0].strip()
+                severity_level = response_split[1].strip().replace("]", "")
+
+                if severity_level == "MEDIUM":
+                    if latitude and longitude:
+                        found_clinics = get_nearest_clinics(latitude, longitude)
+
+                elif severity_level == "HIGH":
+                    if latitude and longitude:
+                        found_clinics = get_nearest_clinics(latitude, longitude)
+                        clean_ai_text += " Please visit a hospital or contact emergency services IMMEDIATELY. Here are the closest facilities and national hotlines."
+                        for helpline, helpline_number in CRITICAL_SA_HOTLINES.items():
+                            clean_ai_text += f" {helpline}: {helpline_number}."
+                    else:
+                        clean_ai_text += " Please call 112 or 10177 immediately. If you need me to find the nearest hospital, please share your current suburb."
+
+            print(f"Afya Generated (Severity: {severity_level}): {clean_ai_text}")
+
+            # 5. Memory Storage
+            if memory_service:
+                memory_service.add_message(session_user_id, "user", user_text)
+                memory_service.add_message(session_user_id, "assistant", clean_ai_text)
+
+            # 6. The Stream Trigger
+            response_payload = {
+                "type": "text_response",
+                "text": clean_ai_text,
+                "severity": severity_level
+            }
+            
+            if found_clinics:
+                response_payload["clinics"] = found_clinics
+            if severity_level == "HIGH":
+                response_payload["hotlines"] = CRITICAL_SA_HOTLINES
+                
+            await websocket.send_text(json.dumps(response_payload))
+            
+          # Clean the text for SSML compatibility before streaming
+            safe_audio_text = clean_ai_text.replace("&", "and")
+
+            # Stream the generated audio and visemes using the sanitized text
             try:
-                async for chunk_payload in stream_tts_and_visemes(ai_response_text):
+                async for chunk_payload in stream_tts_and_visemes(safe_audio_text):
                     await websocket.send_text(chunk_payload)
             except Exception as e:
                 print(f"CRITICAL TTS ERROR: {str(e)}")
                 await websocket.send_text(json.dumps({
-                    "type": "text_response",
+                    "type": "error",
+                    "text": f"BACKEND AUDIO ERROR: {str(e)}"
+                }))
+            except Exception as e:
+                print(f"CRITICAL TTS ERROR: {str(e)}")
+                await websocket.send_text(json.dumps({
+                    "type": "error",
                     "text": f"BACKEND AUDIO ERROR: {str(e)}"
                 }))
                 
