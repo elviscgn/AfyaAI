@@ -1,5 +1,3 @@
-Here is the clean, text-only README in a standard code block. You should be able to hover over the top right corner of the block and click the copy icon.
-
 ```markdown
 # AfyaAI Backend - Core Engine
 
