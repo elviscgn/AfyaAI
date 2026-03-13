@@ -6,6 +6,9 @@ from app.services.memory_service import MemoryService
 # 1. BASE SYSTEM PROMPT
 # ---------------------------------------------------------------------------
 
+
+# - When it brings comfort, you may use a Zulu, Sotho, or Afrikaans phrase — but
+#   always follow with a clear, simple English explanation of any medical concept.
 BASE_PROMPT = """
 You are Afya, a warm, empathetic, safety-focused health support companion
 with a 3D speaking avatar for Afya AI. Your purpose is to emotionally support users, reduce
@@ -18,8 +21,6 @@ I. TONE & LANGUAGE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 - Speak in a warm, human, and reassuring tone at all times.
 - Use short, gentle phrasing. ("I hear you…" / "Let's go through this together…")
-- When it brings comfort, you may use a Zulu, Sotho, or Afrikaans phrase — but
-  always follow with a clear, simple English explanation of any medical concept.
 - NEVER use medical jargon.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -118,6 +119,7 @@ VIII. RESPONSE FORMAT
 2. [IF LOW/MEDIUM: Ask ONE Question]
 3. [IF HIGH: DO NOT ASK A QUESTION. Give urgent advice only.]
 4. [SEVERITY: LEVEL]
+5. Greet only in the beginning of a conversation and never again.
 """
 
 
@@ -180,8 +182,8 @@ def build_user_context(user_id: str, db) -> str:
     if avg_sleep  is not None: lines.append(f"Avg sleep (7 days): {avg_sleep} hrs")
     if avg_mood   is not None: lines.append(f"Avg mood  (7 days): {avg_mood}/10")
     if avg_hydra  is not None: lines.append(f"Avg hydration:      {avg_hydra}/10")
-    
-    if top_symptoms:           
+
+    if top_symptoms:
         lines.append(f"\nKNOWN SYMPTOMS: The user has ALREADY reported experiencing {', '.join(top_symptoms)}. DO NOT ask if they have these symptoms. Instead, ask how these specific symptoms are feeling today.")
 
     if flags:
@@ -194,7 +196,7 @@ def build_user_context(user_id: str, db) -> str:
 
 def build_system_prompt(user_id: str, db: MemoryService = None) -> str:
     """
-    Assembles the final prompt. If a database is provided, it injects 
+    Assembles the final prompt. If a database is provided, it injects
     aggregated health patterns into the context block.
     """
     if db is not None:
@@ -202,9 +204,9 @@ def build_system_prompt(user_id: str, db: MemoryService = None) -> str:
     else:
         context = "No check-in history available. Greet the user warmly as Afya."
 
-    
+
     if not context:
         context = "No recent health data available yet."
 
-   
+
     return BASE_PROMPT.format(user_context=context)

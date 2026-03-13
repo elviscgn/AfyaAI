@@ -7,7 +7,7 @@ function Loader() {
   return null;
 }
 
-export default function AvatarCanvas() {
+export default function AvatarCanvas({ audioUrl }) {  // added audioUrl prop
   return (
     <Canvas
       shadows
@@ -40,7 +40,7 @@ export default function AvatarCanvas() {
       <Environment preset="sunset" environmentIntensity={0.5} />
 
       <Suspense fallback={<Loader />}>
-        <Model position={[0, -4.2, 3.5]} scale={3} />
+        <Model position={[0, -4.2, 3.5]} scale={3} audioUrl={audioUrl} />
       </Suspense>
 
       <OrbitControls

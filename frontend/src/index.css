@@ -640,4 +640,6 @@ textarea.afya-inp { resize: vertical; line-height: 1.62; }
   .afya-pgrid { grid-template-columns: 1fr; }
   .afya-tgrid { grid-template-columns: 1fr; }
   .afya-nav-center { display: none; }
+
 }
+
