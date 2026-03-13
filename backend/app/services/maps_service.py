@@ -1,12 +1,25 @@
 import requests
 from typing import List, Dict, Any
 
-CRITICAL_SA_HOTLINES = {
-    "National Emergency (Mobile)": "112",
-    "Ambulance & Fire": "10177",
-    "Police": "10111",
-    "SADAG Mental Health Helpline": "0800 567 567",
-    "Poison Control": "0861 555 777"
+REGIONAL_HOTLINES = {
+    "South Africa": {
+        "National Emergency (Mobile)": "112",
+        "Ambulance and Fire": "10177",
+        "Police": "10111",
+        "SADAG Mental Health Helpline": "0800 567 567",
+        "Poison Control": "0861 555 777"
+    },
+    "Kenya": {
+        "National Emergency": "999",
+        "Police": "112",
+        "Ambulance": "1199",
+        "Red Cross": "1199"
+    },
+    "Uganda": {
+        "National Emergency": "999",
+        "Police": "112",
+        "Ambulance (Red Cross)": "0414 258 564"
+    }
 }
 
 def get_nearest_clinics(lat: float, lon: float, radius_meters: int = 5000) -> List[Dict[str, Any]]:

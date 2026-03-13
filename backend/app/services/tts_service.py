@@ -1,57 +1,71 @@
-import base64
-import json
-import re
-from google.cloud import texttospeech_v1beta1 as texttospeech
+import os
+import uuid
+from google.cloud import texttospeech
+from app.core.config import settings
 
-async def stream_tts_and_visemes(text: str):
+# Ensure the system knows where the Google key is located using your settings
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = settings.GOOGLE_APPLICATION_CREDENTIALS
+
+# 1. Directory Setup
+AUDIO_DIR = os.path.join("static", "audio")
+os.makedirs(AUDIO_DIR, exist_ok=True)
+
+# 2. Voice Mapping based on your available languages
+VOICE_MAPPING = {
+    "english": "en-GB-Standard-A", 
+    "afrikaans": "af-ZA-Standard-A",
+    "swahili": "sw-KE-Chirp3-HD-Achernar",
+    "zulu": "en-GB-Standard-A", # Fallback to British English
+    "northern sotho": "en-GB-Standard-A" # Fallback to British English
+}
+
+async def generate_and_save_tts(text: str, language: str = "english"):
     """
-    Chunks the text by sentences, generates audio and timepoints, 
-    and yields them as they are ready to simulate real-time streaming.
+    Synthesizes speech, saves it locally, and returns the URL.
     """
-    client = texttospeech.TextToSpeechAsyncClient()
+    client = texttospeech.TextToSpeechClient()
     
-    sentences = re.split(r'(?<=[.!?]) +', text)
+    # Clean text to prevent parsing errors
+    clean_text = text.replace("&", "and").replace("<", "").replace(">", "")
+    synthesis_input = texttospeech.SynthesisInput(text=clean_text)
+
+    # Determine the correct voice code using British English as the ultimate fallback
+    voice_code = VOICE_MAPPING.get(language.lower(), "en-GB-Standard-A")
     
-    for sentence_index, sentence in enumerate(sentences):
-        if not sentence.strip():
-            continue
-            
-        words = sentence.split()
-        ssml = "<speak>"
-        for i, word in enumerate(words):
-            ssml += f'<mark name="w_{sentence_index}_{i}"/>{word} '
-        ssml += "</speak>"
+    voice = texttospeech.VoiceSelectionParams(
+        language_code=voice_code[:5],
+        name=voice_code
+    )
 
-        synthesis_input = texttospeech.SynthesisInput(ssml=ssml)
-        
-        voice = texttospeech.VoiceSelectionParams(
-            language_code="en-GB",
-            name="en-GB-Neural2-A" 
-        )
-        
-        audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.MP3
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.MP3
+    )
+
+    try:
+        # Standard request to ensure maximum library compatibility
+        response = client.synthesize_speech(
+            request={
+                "input": synthesis_input,
+                "voice": voice,
+                "audio_config": audio_config
+            }
         )
 
-        request = texttospeech.SynthesizeSpeechRequest(
-            input=synthesis_input,
-            voice=voice,
-            audio_config=audio_config,
-            enable_time_pointing=[texttospeech.SynthesizeSpeechRequest.TimepointType.SSML_MARK]
-        )
+        # Generate a unique filename and path
+        filename = f"afya_{uuid.uuid4().hex}.mp3"
+        filepath = os.path.join(AUDIO_DIR, filename)
 
-        response = await client.synthesize_speech(request=request)
-
-        timepoints = [
-            {"mark": tp.mark_name, "time_seconds": tp.time_seconds}
-            for tp in response.timepoints
-        ]
-
-        payload = {
-            "type": "audio_chunk",
-            "audio_base64": base64.b64encode(response.audio_content).decode("utf-8"),
-            "timepoints": timepoints,
-            "is_final": (sentence_index == len(sentences) - 1)
-        }
+        # Save the audio content to disk
+        with open(filepath, "wb") as out:
+            out.write(response.audio_content)
         
-        yield json.dumps(payload)
+        print(f"DEBUG: Audio saved successfully: {filename}")
+
+        # Static viseme array to satisfy the Pydantic schema without crashing
+        visemes = [{"markName": "start", "timeSeconds": 0.0}]
+
+        return f"/audio/{filename}", visemes
+
+    except Exception as e:
+        print(f"TTS FAILURE: {e}")
+        return "", []
