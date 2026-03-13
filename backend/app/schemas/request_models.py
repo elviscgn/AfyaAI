@@ -7,14 +7,17 @@ class ChatRequest(BaseModel):
     user_input: str
     language:str = 'english'
     session_id:str 
+    country: Optional[str] = "South Africa"
+    tts_enabled: bool = False
 
 class ChatResponse(BaseModel):
     response_text: str
-    audio_url: Optional[str] = None 
     status: str = "success"
     severity_level:str
     clinics: Optional[List[Dict[str, Any]]] = None
     hotlines: Optional[Dict[str, str]] = None
+    audio_url: Optional[str] = None
+    visemes: Optional[List[Dict[str, Any]]] = None
 
 
 class CheckInRequest(BaseModel):
