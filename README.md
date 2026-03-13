@@ -6,6 +6,10 @@ AfyaAI is not a diagnostic tool. It helps you understand your symptoms, decide w
 
 ---
 
+![AfyaAI](https://i.ibb.co/8DGncMqx/Screenshot-2026-03-13-at-20-23-02.png)
+
+---
+
 ## The Problem
 
 Most people don't have a reliable first point of contact when symptoms appear. They turn to generic search engines, get overwhelmed, and either panic or ignore something serious. AfyaAI sits in that gap — not replacing doctors, but helping you make a more informed first decision.
