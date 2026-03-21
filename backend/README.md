@@ -1,14 +1,11 @@
-```markdown
 # AfyaAI Backend - Core Engine
 
 ## Quick Start: Run the Server
 
 1. **Install Dependencies:**
-   ```bash
-   make sure python version 3.13.5 is being used
-   pip install -r requirements.txt
+make sure python version 3.13.5 is being used
 
-```
+`pip install -r requirements.txt`
 
 2. **Launch the API:**
 ```bash
